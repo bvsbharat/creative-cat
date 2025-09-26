@@ -1,6 +1,6 @@
 "use client"
 
-import { DesignaliCreative } from "@/components/creative" 
+import Creative from "@/components/creative" 
 
  
 export default function Home() {
@@ -9,7 +9,7 @@ export default function Home() {
      
       <main className="overflow-hidden">  
         
-          <DesignaliCreative />
+          <Creative />
   
       </main>
      

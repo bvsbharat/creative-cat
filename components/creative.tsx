@@ -3,1655 +3,1348 @@
 import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
-  Award,
-  Bell,
-  BookOpen,
-  Bookmark,
-  Brush,
+  BarChart3,
+  Brain,
   Camera,
   ChevronDown,
-  Cloud,
-  Code,
-  Crown,
+  Clock,
   Download,
-  FileText,
+  Eye,
   Grid,
-  Heart,
-  Home,
   ImageIcon,
-  Layers,
-  LayoutGrid,
   Lightbulb,
   Menu,
   MessageSquare,
-  Palette,
-  PanelLeft,
   Play,
   Plus,
   Search,
   Settings,
   Share2,
   Sparkles,
-  Star,
-  Trash,
   TrendingUp,
   Users,
   Video,
   Wand2,
-  Clock,
-  Eye,
-  Archive,
-  ArrowUpDown,
-  MoreHorizontal,
-  Type,
-  CuboidIcon,
   X,
+  Zap,
+  Target,
+  PieChart,
+  Activity,
+  Globe,
+  Newspaper
 } from "lucide-react"
-
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Progress } from "@/components/ui/progress"
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { cn } from "@/lib/utils"
+import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Progress } from "@/components/ui/progress"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useToast } from "@/components/ui/use-toast"
+import { Toaster } from "@/components/ui/toaster"
+import ProductPreviewModal from "@/components/product/ProductPreviewModal"
+import { ScrapedProductData } from "@/lib/utils/productScraper"
+import {
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart as RechartsPieChart,
+  Cell,
+  BarChart,
+  Bar
+} from 'recharts'
 
-// Sample data for apps
-const apps = [
-  {
-    name: "PixelMaster",
-    icon: <ImageIcon className="text-violet-500" />,
-    description: "Advanced image editing and composition",
-    category: "Creative",
-    recent: true,
-    new: false,
-    progress: 100,
-  },
-  {
-    name: "VectorPro",
-    icon: <Brush className="text-orange-500" />,
-    description: "Professional vector graphics creation",
-    category: "Creative",
-    recent: true,
-    new: false,
-    progress: 100,
-  },
-  {
-    name: "VideoStudio",
-    icon: <Video className="text-pink-500" />,
-    description: "Cinematic video editing and production",
-    category: "Video",
-    recent: true,
-    new: false,
-    progress: 100,
-  },
-  {
-    name: "MotionFX",
-    icon: <Sparkles className="text-blue-500" />,
-    description: "Stunning visual effects and animations",
-    category: "Video",
-    recent: false,
-    new: false,
-    progress: 100,
-  },
-  {
-    name: "PageCraft",
-    icon: <Layers className="text-red-500" />,
-    description: "Professional page design and layout",
-    category: "Creative",
-    recent: false,
-    new: false,
-    progress: 100,
-  },
-  {
-    name: "UXFlow",
-    icon: <LayoutGrid className="text-fuchsia-500" />,
-    description: "Intuitive user experience design",
-    category: "Design",
-    recent: false,
-    new: true,
-    progress: 85,
-  },
-  {
-    name: "PhotoLab",
-    icon: <Camera className="text-teal-500" />,
-    description: "Advanced photo editing and organization",
-    category: "Photography",
-    recent: false,
-    new: false,
-    progress: 100,
-  },
-  {
-    name: "DocMaster",
-    icon: <FileText className="text-red-600" />,
-    description: "Document editing and management",
-    category: "Document",
-    recent: false,
-    new: false,
-    progress: 100,
-  },
-  {
-    name: "WebCanvas",
-    icon: <Code className="text-emerald-500" />,
-    description: "Web design and development",
-    category: "Web",
-    recent: false,
-    new: true,
-    progress: 70,
-  },
-  {
-    name: "3DStudio",
-    icon: <CuboidIcon className="text-indigo-500" />,
-    description: "3D modeling and rendering",
-    category: "3D",
-    recent: false,
-    new: true,
-    progress: 60,
-  },
-  {
-    name: "FontForge",
-    icon: <Type className="text-amber-500" />,
-    description: "Typography and font creation",
-    category: "Typography",
-    recent: false,
-    new: false,
-    progress: 100,
-  },
-  {
-    name: "ColorPalette",
-    icon: <Palette className="text-purple-500" />,
-    description: "Color scheme creation and management",
-    category: "Design",
-    recent: false,
-    new: false,
-    progress: 100,
-  },
-]
+interface NewsArticle {
+  title: string
+  description: string
+  publishedAt: string
+  source: { name: string }
+  marketingHooks: string[]
+  sentiment: 'positive' | 'negative' | 'neutral'
+  trendScore: number
+}
 
-// Sample data for recent files
-const recentFiles = [
-  {
-    name: "Brand Redesign.pxm",
-    app: "PixelMaster",
-    modified: "2 hours ago",
-    icon: <ImageIcon className="text-violet-500" />,
-    shared: true,
-    size: "24.5 MB",
-    collaborators: 3,
-  },
-  {
-    name: "Company Logo.vec",
-    app: "VectorPro",
-    modified: "Yesterday",
-    icon: <Brush className="text-orange-500" />,
-    shared: true,
-    size: "8.2 MB",
-    collaborators: 2,
-  },
-  {
-    name: "Product Launch Video.vid",
-    app: "VideoStudio",
-    modified: "3 days ago",
-    icon: <Video className="text-pink-500" />,
-    shared: false,
-    size: "1.2 GB",
-    collaborators: 0,
-  },
-  {
-    name: "UI Animation.mfx",
-    app: "MotionFX",
-    modified: "Last week",
-    icon: <Sparkles className="text-blue-500" />,
-    shared: true,
-    size: "345 MB",
-    collaborators: 4,
-  },
-  {
-    name: "Magazine Layout.pgc",
-    app: "PageCraft",
-    modified: "2 weeks ago",
-    icon: <Layers className="text-red-500" />,
-    shared: false,
-    size: "42.8 MB",
-    collaborators: 0,
-  },
-  {
-    name: "Mobile App Design.uxf",
-    app: "UXFlow",
-    modified: "3 weeks ago",
-    icon: <LayoutGrid className="text-fuchsia-500" />,
-    shared: true,
-    size: "18.3 MB",
-    collaborators: 5,
-  },
-  {
-    name: "Product Photography.phl",
-    app: "PhotoLab",
-    modified: "Last month",
-    icon: <Camera className="text-teal-500" />,
-    shared: false,
-    size: "156 MB",
-    collaborators: 0,
-  },
-]
+interface AnalyticsData {
+  overview: {
+    totalImpressions: number
+    totalClicks: number
+    totalConversions: number
+    averageCTR: number
+    averageCPC: number
+    averageROAS: number
+    totalSpend: number
+  }
+  timeline: Array<{
+    date: string
+    impressions: number
+    clicks: number
+    conversions: number
+    ctr: number
+    cpc: number
+    roas: number
+    spend: number
+  }>
+  topPerformingAds: Array<{
+    id: string
+    title: string
+    impressions: number
+    clicks: number
+    conversions: number
+    ctr: number
+    roas: number
+  }>
+}
 
-// Sample data for projects
-const projects = [
-  {
-    name: "Website Redesign",
-    description: "Complete overhaul of company website",
-    progress: 75,
-    dueDate: "June 15, 2025",
-    members: 4,
-    files: 23,
-  },
-  {
-    name: "Mobile App Launch",
-    description: "Design and assets for new mobile application",
-    progress: 60,
-    dueDate: "July 30, 2025",
-    members: 6,
-    files: 42,
-  },
-  {
-    name: "Brand Identity",
-    description: "New brand guidelines and assets",
-    progress: 90,
-    dueDate: "May 25, 2025",
-    members: 3,
-    files: 18,
-  },
-  {
-    name: "Marketing Campaign",
-    description: "Summer promotion materials",
-    progress: 40,
-    dueDate: "August 10, 2025",
-    members: 5,
-    files: 31,
-  },
-]
+interface Product {
+  _id: string
+  title: string
+  description: string
+  price?: number
+  currency?: string
+  images: string[]
+  category: string
+  brand?: string
+  features: string[]
+  targetAudience?: string[]
+  keywords?: string[]
+  amazonUrl?: string
+}
 
-// Sample data for tutorials
-const tutorials = [
-  {
-    title: "Mastering Digital Illustration",
-    description: "Learn advanced techniques for creating stunning digital art",
-    duration: "1h 45m",
-    level: "Advanced",
-    instructor: "Sarah Chen",
-    category: "Illustration",
-    views: "24K",
-  },
-  {
-    title: "UI/UX Design Fundamentals",
-    description: "Essential principles for creating intuitive user interfaces",
-    duration: "2h 20m",
-    level: "Intermediate",
-    instructor: "Michael Rodriguez",
-    category: "Design",
-    views: "56K",
-  },
-  {
-    title: "Video Editing Masterclass",
-    description: "Professional techniques for cinematic video editing",
-    duration: "3h 10m",
-    level: "Advanced",
-    instructor: "James Wilson",
-    category: "Video",
-    views: "32K",
-  },
-  {
-    title: "Typography Essentials",
-    description: "Create beautiful and effective typography for any project",
-    duration: "1h 30m",
-    level: "Beginner",
-    instructor: "Emma Thompson",
-    category: "Typography",
-    views: "18K",
-  },
-  {
-    title: "Color Theory for Designers",
-    description: "Understanding color relationships and psychology",
-    duration: "2h 05m",
-    level: "Intermediate",
-    instructor: "David Kim",
-    category: "Design",
-    views: "41K",
-  },
-]
+interface GeneratedAd {
+  type: string
+  content: string
+  metadata: any
+}
 
-// Sample data for community posts
-const communityPosts = [
-  {
-    title: "Minimalist Logo Design",
-    author: "Alex Morgan",
-    likes: 342,
-    comments: 28,
-    image: "/placeholder.svg?height=300&width=400",
-    time: "2 days ago",
-  },
-  {
-    title: "3D Character Concept",
-    author: "Priya Sharma",
-    likes: 518,
-    comments: 47,
-    image: "/placeholder.svg?height=300&width=400",
-    time: "1 week ago",
-  },
-  {
-    title: "UI Dashboard Redesign",
-    author: "Thomas Wright",
-    likes: 276,
-    comments: 32,
-    image: "/placeholder.svg?height=300&width=400",
-    time: "3 days ago",
-  },
-  {
-    title: "Product Photography Setup",
-    author: "Olivia Chen",
-    likes: 189,
-    comments: 15,
-    image: "/placeholder.svg?height=300&width=400",
-    time: "5 days ago",
-  },
-]
+export default function Creative() {
+  const [activeTab, setActiveTab] = useState("analytics")
+  const [newsData, setNewsData] = useState<NewsArticle[]>([])
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null)
+  const [generatedContent, setGeneratedContent] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [isGenerating, setIsGenerating] = useState(false)
 
-// Sample data for sidebar navigation
-const sidebarItems = [
-  {
-    title: "Home",
-    icon: <Home />,
-    isActive: true,
-  },
-  {
-    title: "Apps",
-    icon: <Grid />,
-    badge: "2",
-    items: [
-      { title: "All Apps", url: "#" },
-      { title: "Recent", url: "#" },
-      { title: "Updates", url: "#", badge: "2" },
-      { title: "Installed", url: "#" },
-    ],
-  },
-  {
-    title: "Files",
-    icon: <FileText />,
-    items: [
-      { title: "Recent", url: "#" },
-      { title: "Shared with me", url: "#", badge: "3" },
-      { title: "Favorites", url: "#" },
-      { title: "Trash", url: "#" },
-    ],
-  },
-  {
-    title: "Projects",
-    icon: <Layers />,
-    badge: "4",
-    items: [
-      { title: "Active Projects", url: "#", badge: "4" },
-      { title: "Archived", url: "#" },
-      { title: "Templates", url: "#" },
-    ],
-  },
-  {
-    title: "Learn",
-    icon: <BookOpen />,
-    items: [
-      { title: "Tutorials", url: "#" },
-      { title: "Courses", url: "#" },
-      { title: "Webinars", url: "#" },
-      { title: "Resources", url: "#" },
-    ],
-  },
-  {
-    title: "Community",
-    icon: <Users />,
-    items: [
-      { title: "Explore", url: "#" },
-      { title: "Following", url: "#" },
-      { title: "Challenges", url: "#" },
-      { title: "Events", url: "#" },
-    ],
-  },
-  {
-    title: "Resources",
-    icon: <Bookmark />,
-    items: [
-      { title: "Stock Photos", url: "#" },
-      { title: "Fonts", url: "#" },
-      { title: "Icons", url: "#" },
-      { title: "Templates", url: "#" },
-    ],
-  },
-]
+  // Product and ads states
+  const [products, setProducts] = useState<Product[]>([])
+  const [selectedProduct, setSelectedProduct] = useState<string>('')
+  const [productUrl, setProductUrl] = useState('')
+  const [isLoadingProduct, setIsLoadingProduct] = useState(false)
+  const [generatedAds, setGeneratedAds] = useState<GeneratedAd[]>([])
+  const [selectedAdType, setSelectedAdType] = useState('image-generation')
+  const [targetAudience, setTargetAudience] = useState('')
+  const [adStyle, setAdStyle] = useState('modern')
+  const [platform, setPlatform] = useState('instagram')
+  const [customPrompt, setCustomPrompt] = useState('')
 
-export function DesignaliCreative() {
-  const [progress, setProgress] = useState(0)
-  const [notifications, setNotifications] = useState(5)
-  const [activeTab, setActiveTab] = useState("home")
-  const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({})
+  // Product preview modal states
+  const [showProductModal, setShowProductModal] = useState(false)
+  const [previewProductData, setPreviewProductData] = useState<ScrapedProductData | null>(null)
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false)
+  const [isSavingProduct, setIsSavingProduct] = useState(false)
+  const { toast } = useToast()
 
-  // Simulate progress loading
   useEffect(() => {
-    const timer = setTimeout(() => setProgress(100), 1000)
-    return () => clearTimeout(timer)
+    fetchNewsData()
+    fetchAnalyticsData()
+    fetchProducts()
   }, [])
 
-  const toggleExpanded = (title: string) => {
-    setExpandedItems((prev) => ({
-      ...prev,
-      [title]: !prev[title],
-    }))
+  const fetchNewsData = async () => {
+    try {
+      const response = await fetch('/api/news?q=marketing advertising AI')
+      const data = await response.json()
+      if (data.success) {
+        setNewsData(data.articles)
+      }
+    } catch (error) {
+      console.error('Failed to fetch news:', error)
+    }
   }
 
+  const fetchAnalyticsData = async () => {
+    try {
+      const response = await fetch('/api/analytics?range=7d')
+      const data = await response.json()
+      if (data.success) {
+        setAnalyticsData(data.data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch analytics:', error)
+    }
+  }
+
+  const generateContent = async (type: string, prompt: string) => {
+    setIsGenerating(true)
+    try {
+      const marketingHooks = newsData.flatMap(article => article.marketingHooks).slice(0, 10)
+
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          type,
+          prompt,
+          newsContext: newsData.slice(0, 3),
+          marketingHooks,
+          targetAudience: 'business professionals'
+        })
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        setGeneratedContent(data.content)
+      }
+    } catch (error) {
+      console.error('Failed to generate content:', error)
+    }
+    setIsGenerating(false)
+  }
+
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch('/api/products')
+      const data = await response.json()
+      if (data.success) {
+        setProducts(data.products)
+      } else {
+        console.error('Failed to fetch products:', data.error)
+        toast({
+          title: "Failed to Load Products",
+          description: data.error || "Could not load products from database.",
+          variant: "destructive"
+        })
+      }
+    } catch (error) {
+      console.error('Failed to fetch products:', error)
+      toast({
+        title: "Connection Error",
+        description: "Could not connect to server.",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const addProductFromUrl = async () => {
+    if (!productUrl.trim()) return
+
+    setShowProductModal(true)
+    setIsPreviewLoading(true)
+
+    try {
+      // Fetch product data using Apify (1Click methodology)
+      const response = await fetch('/api/scrape-product', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ url: productUrl.trim() })
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        setPreviewProductData(data.productData)
+        toast({
+          title: "Product Fetched Successfully",
+          description: "Product details loaded via Apify API. Review and save to database.",
+          variant: "success"
+        })
+      } else {
+        throw new Error(data.error || 'Failed to fetch product')
+      }
+    } catch (error) {
+      console.error('Failed to fetch product:', error)
+      toast({
+        title: "Failed to Fetch Product",
+        description: "Could not fetch product details. Please check the URL and try again.",
+        variant: "destructive"
+      })
+      setShowProductModal(false)
+    }
+    setIsPreviewLoading(false)
+  }
+
+  const handleSaveProduct = async (productData: ScrapedProductData) => {
+    setIsSavingProduct(true)
+    try {
+      const response = await fetch('/api/products', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          productData,
+          amazonUrl: productUrl.trim()
+        })
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        // Add the product to local state immediately
+        const newProduct = data.product
+        setProducts(prevProducts => {
+          // Check if product already exists to avoid duplicates
+          const existingIndex = prevProducts.findIndex(p => p._id === newProduct._id)
+          if (existingIndex >= 0) {
+            // Update existing product
+            const updated = [...prevProducts]
+            updated[existingIndex] = newProduct
+            return updated
+          } else {
+            // Add new product to the beginning
+            return [newProduct, ...prevProducts]
+          }
+        })
+        setSelectedProduct(newProduct._id)
+        setProductUrl('')
+        setShowProductModal(false)
+        setPreviewProductData(null)
+
+        const isDatabaseUnavailable = data.message?.includes('database temporarily unavailable')
+        toast({
+          title: "Product Saved",
+          description: isDatabaseUnavailable
+            ? "Product saved locally (database temporarily unavailable)"
+            : "Product has been successfully saved to your database.",
+          variant: "success"
+        })
+      } else {
+        throw new Error(data.error || 'Failed to save product')
+      }
+    } catch (error) {
+      console.error('Failed to save product:', error)
+      toast({
+        title: "Failed to Save Product",
+        description: "Could not save product. Please try again.",
+        variant: "destructive"
+      })
+    }
+    setIsSavingProduct(false)
+  }
+
+  const handleCloseModal = () => {
+    setShowProductModal(false)
+    setPreviewProductData(null)
+    setIsPreviewLoading(false)
+  }
+
+  const generateAdvancedAd = async () => {
+    if (!selectedProduct) return
+
+    setIsGenerating(true)
+    try {
+      const marketingHooks = newsData.flatMap(article => article.marketingHooks).slice(0, 10)
+
+      // Find the selected product data to include as fallback
+      const selectedProductData = products.find(p => p._id === selectedProduct)
+
+      // Use appropriate endpoint based on ad type
+      if (selectedAdType === 'image-generation' || selectedAdType === 'video-generation') {
+        const endpoint = selectedAdType === 'video-generation' ? '/api/generate-video-ad' : '/api/generate-ad'
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            productData: selectedProductData,
+            adType: 'professional', // Default to professional for 1Click
+            platform: platform,
+            style: adStyle,
+            customPrompt: customPrompt,
+            ...(selectedAdType === 'video-generation' && {
+              videoOptions: {
+                resolution: '720p',
+                generateAudio: true,
+                aspectRatio: '16:9'
+              }
+            })
+          })
+        })
+
+        const data = await response.json()
+        if (data.success) {
+          let transformedAds = []
+
+          // Handle video generation response
+          if (selectedAdType === 'video-generation' && data.videoAdConcepts) {
+            transformedAds = data.videoAdConcepts.map((concept: any) => ({
+              type: 'video-ad',
+              content: `## ${concept.concept} Video Advertisement
+
+**Concept**: ${concept.concept}
+
+**Animation Prompt**:
+${concept.animationPrompt}
+
+**Static Image**: ${concept.staticImage ? 'Available' : 'Not available'}
+**Video**: ${concept.videoUrl ? 'Generated' : 'Generation in progress...'}
+
+**Platform**: ${concept.metadata?.platform || platform}
+**Style**: ${concept.metadata?.style || adStyle}
+**Animation Type**: ${concept.metadata?.animationType || 'Professional'}`,
+              metadata: {
+                platform: concept.metadata?.platform || platform,
+                style: concept.metadata?.style || adStyle,
+                concept: concept.concept,
+                videoUrl: concept.videoUrl,
+                staticImage: concept.staticImage,
+                animationPrompt: concept.animationPrompt,
+                animationType: concept.metadata?.animationType,
+                prompt: concept.prompt
+              }
+            }))
+
+            // Also add static concepts if available
+            if (data.staticAdConcepts) {
+              const staticAds = data.staticAdConcepts.map((concept: any) => ({
+                type: '1click-image-ad',
+                content: `## ${concept.concept} Static Advertisement
+
+**Concept**: ${concept.concept}
+
+**Prompt Specification**:
+${concept.prompt}
+
+**Generated Image**: ${concept.imageBase64 ? 'Available' : 'Generation in progress...'}
+
+**Platform**: ${concept.metadata?.platform || platform}
+**Style**: ${concept.metadata?.style || adStyle}
+**Focus**: ${concept.metadata?.focus || 'Professional advertising'}`,
+                metadata: {
+                  platform: concept.metadata?.platform || platform,
+                  style: concept.metadata?.style || adStyle,
+                  concept: concept.concept,
+                  imageBase64: concept.imageBase64,
+                  prompt: concept.prompt
+                }
+              }))
+              transformedAds = [...transformedAds, ...staticAds]
+            }
+          }
+          // Handle image generation response
+          else if (data.adConcepts) {
+            transformedAds = data.adConcepts.map((concept: any) => ({
+              type: '1click-image-ad',
+              content: `## ${concept.concept} Advertisement
+
+**Concept**: ${concept.concept}
+
+**Prompt Specification**:
+${concept.prompt}
+
+**Generated Image**: ${concept.imageBase64 ? 'Available' : 'Generation in progress...'}
+
+**Platform**: ${concept.metadata?.platform || platform}
+**Style**: ${concept.metadata?.style || adStyle}
+**Focus**: ${concept.metadata?.focus || 'Professional advertising'}`,
+              metadata: {
+                platform: concept.metadata?.platform || platform,
+                style: concept.metadata?.style || adStyle,
+                concept: concept.concept,
+                imageBase64: concept.imageBase64,
+                prompt: concept.prompt
+              }
+            }))
+          }
+
+          if (transformedAds.length > 0) {
+            setGeneratedAds([...transformedAds, ...generatedAds.slice(0, 1)])
+            const adType = selectedAdType === 'video-generation' ? 'Video Ads' : 'Image Ads'
+            toast({
+              title: `${adType} Generated`,
+              description: `Generated ${transformedAds.length} professional ad concepts with Fal.ai.`,
+              variant: "success"
+            })
+          }
+        }
+      } else {
+        // Use existing ads-generate endpoint for other types
+        const response = await fetch('/api/ads-generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            productId: selectedProduct,
+            productData: selectedProductData, // Include product data as fallback
+            adType: selectedAdType,
+            targetAudience,
+            adStyle,
+            platform,
+            customPrompt,
+            newsContext: newsData.slice(0, 3),
+            marketingHooks
+          })
+        })
+
+        const data = await response.json()
+        if (data.success) {
+          setGeneratedAds([data.ad, ...generatedAds.slice(0, 4)])
+        }
+      }
+    } catch (error) {
+      console.error('Failed to generate ad:', error)
+      toast({
+        title: "Ad Generation Failed",
+        description: "Could not generate advertisement. Please try again.",
+        variant: "destructive"
+      })
+    }
+    setIsGenerating(false)
+  }
+
+  const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#8dd1e1']
+
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background">
-      {/* Animated gradient background */}
-      <motion.div
-        className="absolute inset-0 -z-10 opacity-20"
-        animate={{
-          background: [
-            "radial-gradient(circle at 50% 50%, rgba(120, 41, 190, 0.5) 0%, rgba(53, 71, 125, 0.5) 50%, rgba(0, 0, 0, 0) 100%)",
-            "radial-gradient(circle at 30% 70%, rgba(233, 30, 99, 0.5) 0%, rgba(81, 45, 168, 0.5) 50%, rgba(0, 0, 0, 0) 100%)",
-            "radial-gradient(circle at 70% 30%, rgba(76, 175, 80, 0.5) 0%, rgba(32, 119, 188, 0.5) 50%, rgba(0, 0, 0, 0) 100%)",
-            "radial-gradient(circle at 50% 50%, rgba(120, 41, 190, 0.5) 0%, rgba(53, 71, 125, 0.5) 50%, rgba(0, 0, 0, 0) 100%)",
-          ],
-        }}
-        transition={{ duration: 30, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
-      />
-
-      {/* Mobile menu overlay */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-40 bg-black/50 md:hidden" onClick={() => setMobileMenuOpen(false)} />
-      )}
-
-      {/* Sidebar - Mobile */}
-      <div
-        className={cn(
-          "fixed inset-y-0 left-0 z-50 w-64 transform bg-background transition-transform duration-300 ease-in-out md:hidden",
-          mobileMenuOpen ? "translate-x-0" : "-translate-x-full",
-        )}
-      >
-        <div className="flex h-full flex-col border-r">
-          <div className="flex items-center justify-between p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex aspect-square size-10 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-600 to-blue-600 text-white">
-                <Wand2 className="size-5" />
-              </div>
-              <div>
-                <h2 className="font-semibold">Designali</h2>
-                <p className="text-xs text-muted-foreground">Creative Suite</p>
-              </div>
-            </div>
-            <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(false)}>
-              <X className="h-5 w-5" />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4">
+      <div className="mx-auto max-w-7xl space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900">AI-Powered Ads Intelligence</h1>
+            <p className="text-slate-600 mt-1">Advanced analytics, content generation, and creative insights</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm">
+              <Settings className="w-4 h-4 mr-2" />
+              Settings
             </Button>
           </div>
-
-          <div className="px-3 py-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input type="search" placeholder="Search..." className="w-full rounded-2xl bg-muted pl-9 pr-4 py-2" />
-            </div>
-          </div>
-
-          <ScrollArea className="flex-1 px-3 py-2">
-            <div className="space-y-1">
-              {sidebarItems.map((item) => (
-                <div key={item.title} className="mb-1">
-                  <button
-                    className={cn(
-                      "flex w-full items-center justify-between rounded-2xl px-3 py-2 text-sm font-medium",
-                      item.isActive ? "bg-primary/10 text-primary" : "hover:bg-muted",
-                    )}
-                    onClick={() => item.items && toggleExpanded(item.title)}
-                  >
-                    <div className="flex items-center gap-3">
-                      {item.icon}
-                      <span>{item.title}</span>
-                    </div>
-                    {item.badge && (
-                      <Badge variant="outline" className="ml-auto rounded-full px-2 py-0.5 text-xs">
-                        {item.badge}
-                      </Badge>
-                    )}
-                    {item.items && (
-                      <ChevronDown
-                        className={cn(
-                          "ml-2 h-4 w-4 transition-transform",
-                          expandedItems[item.title] ? "rotate-180" : "",
-                        )}
-                      />
-                    )}
-                  </button>
-
-                  {item.items && expandedItems[item.title] && (
-                    <div className="mt-1 ml-6 space-y-1 border-l pl-3">
-                      {item.items.map((subItem) => (
-                        <a
-                          key={subItem.title}
-                          href={subItem.url}
-                          className="flex items-center justify-between rounded-2xl px-3 py-2 text-sm hover:bg-muted"
-                        >
-                          {subItem.title}
-                          {subItem.badge && (
-                            <Badge variant="outline" className="ml-auto rounded-full px-2 py-0.5 text-xs">
-                              {subItem.badge}
-                            </Badge>
-                          )}
-                        </a>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </ScrollArea>
-
-          <div className="border-t p-3">
-            <div className="space-y-1">
-              <button className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-sm font-medium hover:bg-muted">
-                <Settings className="h-5 w-5" />
-                <span>Settings</span>
-              </button>
-              <button className="flex w-full items-center justify-between rounded-2xl px-3 py-2 text-sm font-medium hover:bg-muted">
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-6 w-6">
-                    <AvatarImage src="/placeholder.svg?height=32&width=32" alt="User" />
-                    <AvatarFallback>JD</AvatarFallback>
-                  </Avatar>
-                  <span>John Doe</span>
-                </div>
-                <Badge variant="outline" className="ml-auto">
-                  Pro
-                </Badge>
-              </button>
-            </div>
-          </div>
         </div>
-      </div>
 
-      {/* Sidebar - Desktop */}
-      <div
-        className={cn(
-          "fixed inset-y-0 left-0 z-30 hidden w-64 transform border-r bg-background transition-transform duration-300 ease-in-out md:block",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full",
-        )}
-      >
-        <div className="flex h-full flex-col">
-          <div className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex aspect-square size-10 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-600 to-blue-600 text-white">
-                <Wand2 className="size-5" />
-              </div>
-              <div>
-                <h2 className="font-semibold">Designali</h2>
-                <p className="text-xs text-muted-foreground">Creative Suite</p>
-              </div>
+        {/* Main Dashboard */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" />
+              Analytics
+            </TabsTrigger>
+            <TabsTrigger value="content" className="flex items-center gap-2">
+              <Brain className="w-4 h-4" />
+              Content Gen
+            </TabsTrigger>
+            <TabsTrigger value="ads" className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4" />
+              Ads Studio
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Analytics Dashboard Tab */}
+          <TabsContent value="analytics" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {analyticsData && (
+                <>
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-slate-600">Total Impressions</p>
+                          <p className="text-2xl font-bold">{analyticsData.overview.totalImpressions.toLocaleString()}</p>
+                        </div>
+                        <Eye className="w-8 h-8 text-blue-500" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-slate-600">Total Clicks</p>
+                          <p className="text-2xl font-bold">{analyticsData.overview.totalClicks.toLocaleString()}</p>
+                        </div>
+                        <Target className="w-8 h-8 text-green-500" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-slate-600">Avg CTR</p>
+                          <p className="text-2xl font-bold">{analyticsData.overview.averageCTR}%</p>
+                        </div>
+                        <Activity className="w-8 h-8 text-orange-500" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-slate-600">ROAS</p>
+                          <p className="text-2xl font-bold">{analyticsData.overview.averageROAS}x</p>
+                        </div>
+                        <TrendingUp className="w-8 h-8 text-purple-500" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </>
+              )}
             </div>
-          </div>
 
-          <div className="px-3 py-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input type="search" placeholder="Search..." className="w-full rounded-2xl bg-muted pl-9 pr-4 py-2" />
-            </div>
-          </div>
-
-          <ScrollArea className="flex-1 px-3 py-2">
-            <div className="space-y-1">
-              {sidebarItems.map((item) => (
-                <div key={item.title} className="mb-1">
-                  <button
-                    className={cn(
-                      "flex w-full items-center justify-between rounded-2xl px-3 py-2 text-sm font-medium",
-                      item.isActive ? "bg-primary/10 text-primary" : "hover:bg-muted",
-                    )}
-                    onClick={() => item.items && toggleExpanded(item.title)}
-                  >
-                    <div className="flex items-center gap-3">
-                      {item.icon}
-                      <span>{item.title}</span>
-                    </div>
-                    {item.badge && (
-                      <Badge variant="outline" className="ml-auto rounded-full px-2 py-0.5 text-xs">
-                        {item.badge}
-                      </Badge>
-                    )}
-                    {item.items && (
-                      <ChevronDown
-                        className={cn(
-                          "ml-2 h-4 w-4 transition-transform",
-                          expandedItems[item.title] ? "rotate-180" : "",
-                        )}
-                      />
-                    )}
-                  </button>
-
-                  {item.items && expandedItems[item.title] && (
-                    <div className="mt-1 ml-6 space-y-1 border-l pl-3">
-                      {item.items.map((subItem) => (
-                        <a
-                          key={subItem.title}
-                          href={subItem.url}
-                          className="flex items-center justify-between rounded-2xl px-3 py-2 text-sm hover:bg-muted"
-                        >
-                          {subItem.title}
-                          {subItem.badge && (
-                            <Badge variant="outline" className="ml-auto rounded-full px-2 py-0.5 text-xs">
-                              {subItem.badge}
-                            </Badge>
-                          )}
-                        </a>
-                      ))}
-                    </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Performance Chart */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Performance Trends</CardTitle>
+                  <CardDescription>Click-through rates and conversions over time</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {analyticsData && (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <LineChart data={analyticsData.timeline}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="date" />
+                        <YAxis />
+                        <Tooltip />
+                        <Line type="monotone" dataKey="ctr" stroke="#8884d8" strokeWidth={2} />
+                        <Line type="monotone" dataKey="roas" stroke="#82ca9d" strokeWidth={2} />
+                      </LineChart>
+                    </ResponsiveContainer>
                   )}
-                </div>
-              ))}
-            </div>
-          </ScrollArea>
+                </CardContent>
+              </Card>
 
-          <div className="border-t p-3">
-            <div className="space-y-1">
-              <button className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-sm font-medium hover:bg-muted">
-                <Settings className="h-5 w-5" />
-                <span>Settings</span>
-              </button>
-              <button className="flex w-full items-center justify-between rounded-2xl px-3 py-2 text-sm font-medium hover:bg-muted">
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-6 w-6">
-                    <AvatarImage src="/placeholder.svg?height=32&width=32" alt="User" />
-                    <AvatarFallback>JD</AvatarFallback>
-                  </Avatar>
-                  <span>John Doe</span>
-                </div>
-                <Badge variant="outline" className="ml-auto">
-                  Pro
-                </Badge>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className={cn("min-h-screen transition-all duration-300 ease-in-out", sidebarOpen ? "md:pl-64" : "md:pl-0")}>
-        <header className="sticky top-0 z-10 flex h-16 items-center gap-3 border-b bg-background/95 px-4 backdrop-blur">
-          <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileMenuOpen(true)}>
-            <Menu className="h-5 w-5" />
-          </Button>
-          <Button variant="ghost" size="icon" className="hidden md:flex" onClick={() => setSidebarOpen(!sidebarOpen)}>
-            <PanelLeft className="h-5 w-5" />
-          </Button>
-          <div className="flex flex-1 items-center justify-between">
-            <h1 className="text-xl font-semibold">Designali Creative</h1>
-            <div className="flex items-center gap-3">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="rounded-2xl">
-                      <Cloud className="h-5 w-5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Cloud Storage</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="rounded-2xl">
-                      <MessageSquare className="h-5 w-5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Messages</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="rounded-2xl relative">
-                      <Bell className="h-5 w-5" />
-                      {notifications > 0 && (
-                        <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white">
-                          {notifications}
-                        </span>
-                      )}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Notifications</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-
-              <Avatar className="h-9 w-9 border-2 border-primary">
-                <AvatarImage src="/placeholder.svg?height=40&width=40" alt="User" />
-                <AvatarFallback>JD</AvatarFallback>
-              </Avatar>
-            </div>
-          </div>
-        </header>
-
-        <main className="flex-1 p-4 md:p-6">
-          <Tabs defaultValue="home" value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <TabsList className="grid w-full max-w-[600px] grid-cols-5 rounded-2xl p-1">
-                <TabsTrigger value="home" className="rounded-xl data-[state=active]:rounded-xl">
-                  Home
-                </TabsTrigger>
-                <TabsTrigger value="apps" className="rounded-xl data-[state=active]:rounded-xl">
-                  Apps
-                </TabsTrigger>
-                <TabsTrigger value="files" className="rounded-xl data-[state=active]:rounded-xl">
-                  Files
-                </TabsTrigger>
-                <TabsTrigger value="projects" className="rounded-xl data-[state=active]:rounded-xl">
-                  Projects
-                </TabsTrigger>
-                <TabsTrigger value="learn" className="rounded-xl data-[state=active]:rounded-xl">
-                  Learn
-                </TabsTrigger>
-              </TabsList>
-              <div className="hidden md:flex gap-2">
-                <Button variant="outline" className="rounded-2xl">
-                  <Download className="mr-2 h-4 w-4" />
-                  Install App
-                </Button>
-                <Button className="rounded-2xl">
-                  <Plus className="mr-2 h-4 w-4" />
-                  New Project
-                </Button>
-              </div>
-            </div>
-
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeTab}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
-              >
-                <TabsContent value="home" className="space-y-8 mt-0">
-                  <section>
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5 }}
-                      className="overflow-hidden rounded-3xl bg-gradient-to-r from-violet-600 via-indigo-600 to-blue-600 p-8 text-white"
-                    >
-                      <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-                        <div className="space-y-4">
-                          <Badge className="bg-white/20 text-white hover:bg-white/30 rounded-xl">Premium</Badge>
-                          <h2 className="text-3xl font-bold">Welcome to DesignAli Creative Suite</h2>
-                          <p className="max-w-[600px] text-white/80">
-                            Unleash your creativity with our comprehensive suite of professional design tools and
-                            resources.
-                          </p>
-                          <div className="flex flex-wrap gap-3">
-                            <Button className="rounded-2xl bg-white text-indigo-700 hover:bg-white/90">
-                              Explore Plans
-                            </Button>
-                            <Button
-                              variant="outline"
-                              className="rounded-2xl bg-transparent border-white text-white hover:bg-white/10"
+              {/* News Feed */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Newspaper className="w-5 h-5" />
+                    Latest Marketing News
+                  </CardTitle>
+                  <CardDescription>Real-time insights and trends</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[300px]">
+                    <div className="space-y-4">
+                      {newsData.map((article, index) => (
+                        <div key={index} className="border-b pb-4 last:border-b-0">
+                          <h4 className="font-semibold text-sm">{article.title}</h4>
+                          <p className="text-xs text-slate-600 mt-1">{article.description}</p>
+                          <div className="flex items-center justify-between mt-2">
+                            <div className="flex gap-1">
+                              {article.marketingHooks.slice(0, 2).map((hook, hookIndex) => (
+                                <Badge key={hookIndex} variant="secondary" className="text-xs">
+                                  {hook}
+                                </Badge>
+                              ))}
+                            </div>
+                            <Badge
+                              variant={article.sentiment === 'positive' ? 'default' : article.sentiment === 'negative' ? 'destructive' : 'secondary'}
+                              className="text-xs"
                             >
-                              Take a Tour
-                            </Button>
+                              {article.sentiment}
+                            </Badge>
                           </div>
                         </div>
-                        <div className="hidden lg:block">
-                          <motion.div
-                            animate={{ rotate: 360 }}
-                            transition={{ duration: 50, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
-                            className="relative h-40 w-40"
-                          >
-                            <div className="absolute inset-0 rounded-full bg-white/10 backdrop-blur-md" />
-                            <div className="absolute inset-4 rounded-full bg-white/20" />
-                            <div className="absolute inset-8 rounded-full bg-white/30" />
-                            <div className="absolute inset-12 rounded-full bg-white/40" />
-                            <div className="absolute inset-16 rounded-full bg-white/50" />
-                          </motion.div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Top Performing Ads */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Top Performing Ads</CardTitle>
+                <CardDescription>Best performing campaigns based on ROAS and CTR</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {analyticsData && (
+                  <div className="space-y-4">
+                    {analyticsData.topPerformingAds.map((ad, index) => (
+                      <div key={ad.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
+                            <span className="text-white font-bold">{index + 1}</span>
+                          </div>
+                          <div>
+                            <h4 className="font-semibold">{ad.title}</h4>
+                            <p className="text-sm text-slate-600">
+                              {ad.impressions.toLocaleString()} impressions • {ad.clicks.toLocaleString()} clicks
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-semibold text-green-600">{ad.roas}x ROAS</div>
+                          <div className="text-sm text-slate-600">{ad.ctr}% CTR</div>
                         </div>
                       </div>
-                    </motion.div>
-                  </section>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-                  <section className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h2 className="text-2xl font-semibold">Recent Apps</h2>
-                      <Button variant="ghost" className="rounded-2xl">
-                        View All
-                      </Button>
-                    </div>
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                      {apps
-                        .filter((app) => app.recent)
-                        .map((app) => (
-                          <motion.div key={app.name} whileHover={{ scale: 1.02, y: -5 }} whileTap={{ scale: 0.98 }}>
-                            <Card className="overflow-hidden rounded-3xl border-2 hover:border-primary/50 transition-all duration-300">
-                              <CardHeader className="pb-2">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted">
-                                    {app.icon}
-                                  </div>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-2xl">
-                                    <Star className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </CardHeader>
-                              <CardContent className="pb-2">
-                                <CardTitle className="text-lg">{app.name}</CardTitle>
-                                <CardDescription>{app.description}</CardDescription>
-                              </CardContent>
-                              <CardFooter>
-                                <Button variant="secondary" className="w-full rounded-2xl">
-                                  Open
-                                </Button>
-                              </CardFooter>
-                            </Card>
-                          </motion.div>
-                        ))}
-                    </div>
-                  </section>
+          {/* Content Generator Tab */}
+          <TabsContent value="content" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Brain className="w-5 h-5" />
+                    AI Content Generator
+                  </CardTitle>
+                  <CardDescription>Generate marketing content based on latest trends</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => generateContent('ad-copy', 'Create compelling ad copy for a new marketing automation tool')}
+                      disabled={isGenerating}
+                      className="h-auto p-4 flex flex-col items-center gap-2"
+                    >
+                      <MessageSquare className="w-6 h-6" />
+                      <span className="text-sm">Ad Copy</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => generateContent('social-post', 'Create engaging social media posts about AI marketing trends')}
+                      disabled={isGenerating}
+                      className="h-auto p-4 flex flex-col items-center gap-2"
+                    >
+                      <Share2 className="w-6 h-6" />
+                      <span className="text-sm">Social Posts</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => generateContent('campaign-strategy', 'Develop a comprehensive marketing campaign strategy')}
+                      disabled={isGenerating}
+                      className="h-auto p-4 flex flex-col items-center gap-2"
+                    >
+                      <Target className="w-6 h-6" />
+                      <span className="text-sm">Campaign Strategy</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => generateContent('visual-description', 'Create visual concepts for marketing materials')}
+                      disabled={isGenerating}
+                      className="h-auto p-4 flex flex-col items-center gap-2"
+                    >
+                      <ImageIcon className="w-6 h-6" />
+                      <span className="text-sm">Visual Concepts</span>
+                    </Button>
+                  </div>
 
-                  <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-                    <section className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <h2 className="text-2xl font-semibold">Recent Files</h2>
-                        <Button variant="ghost" className="rounded-2xl">
-                          View All
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Custom Prompt</label>
+                    <Textarea
+                      placeholder="Enter your custom prompt for AI content generation..."
+                      className="min-h-[100px]"
+                    />
+                    <Button className="w-full" disabled={isGenerating}>
+                      {isGenerating ? (
+                        <>
+                          <Sparkles className="w-4 h-4 mr-2 animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Wand2 className="w-4 h-4 mr-2" />
+                          Generate Custom Content
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Generated Content</CardTitle>
+                  <CardDescription>AI-generated content based on latest trends</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {generatedContent ? (
+                    <div className="space-y-4">
+                      <ScrollArea className="h-[400px] w-full border rounded-lg p-4">
+                        <pre className="whitespace-pre-wrap text-sm">{generatedContent}</pre>
+                      </ScrollArea>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline">
+                          <Download className="w-4 h-4 mr-2" />
+                          Export
+                        </Button>
+                        <Button size="sm" variant="outline">
+                          <Share2 className="w-4 h-4 mr-2" />
+                          Share
                         </Button>
                       </div>
-                      <div className="rounded-3xl border">
-                        <div className="grid grid-cols-1 divide-y">
-                          {recentFiles.slice(0, 4).map((file) => (
-                            <motion.div
-                              key={file.name}
-                              whileHover={{ backgroundColor: "rgba(0,0,0,0.02)" }}
-                              className="flex items-center justify-between p-4"
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted">
-                                  {file.icon}
+                    </div>
+                  ) : (
+                    <div className="h-[400px] border rounded-lg flex items-center justify-center text-slate-500">
+                      <div className="text-center">
+                        <Brain className="w-16 h-16 mx-auto mb-4 text-slate-300" />
+                        <p>Generated content will appear here</p>
+                        <p className="text-sm mt-1">Select a generation type to get started</p>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Market Insights */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5" />
+                  Current Market Hooks & Trends
+                </CardTitle>
+                <CardDescription>Latest trending keywords and hooks for content generation</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <h4 className="font-semibold mb-3 text-green-600">Growing Trends</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {['AI Marketing', 'Automation', 'Personalization', 'ROI Optimization'].map((trend, index) => (
+                        <Badge key={index} className="bg-green-100 text-green-800">
+                          {trend}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-3 text-blue-600">Active Hooks</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {newsData.flatMap(article => article.marketingHooks).slice(0, 8).map((hook, index) => (
+                        <Badge key={index} variant="secondary">
+                          {hook}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-3 text-orange-600">Emerging Channels</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {['TikTok Ads', 'Pinterest Shopping', 'Snapchat AR', 'LinkedIn Video'].map((channel, index) => (
+                        <Badge key={index} className="bg-orange-100 text-orange-800">
+                          {channel}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Ads Studio Tab */}
+          <TabsContent value="ads" className="space-y-6">
+            {/* Product Management Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Globe className="w-5 h-5" />
+                  Product Management
+                </CardTitle>
+                <CardDescription>Add products from Amazon URLs or select existing products</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex gap-3">
+                  <Input
+                    placeholder="Paste Amazon product URL here..."
+                    value={productUrl}
+                    onChange={(e) => setProductUrl(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button
+                    onClick={addProductFromUrl}
+                    disabled={isLoadingProduct || !productUrl.trim()}
+                  >
+                    {isLoadingProduct ? (
+                      <>
+                        <Sparkles className="w-4 h-4 mr-2 animate-spin" />
+                        Adding...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Product
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Select Product</label>
+                  <Select value={selectedProduct} onValueChange={setSelectedProduct}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a product for ads generation" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {products.map((product) => (
+                        <SelectItem key={product._id} value={product._id}>
+                          <div className="flex items-center gap-3">
+                            {product.images[0] && (
+                              <img
+                                src={product.images[0]}
+                                alt={product.title}
+                                className="w-8 h-8 object-cover rounded"
+                              />
+                            )}
+                            <div>
+                              <div className="font-medium truncate max-w-[200px]">{product.title}</div>
+                              <div className="text-xs text-slate-500">{product.category}</div>
+                            </div>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {selectedProduct && products.find(p => p._id === selectedProduct) && (
+                  <div className="p-4 border rounded-lg bg-slate-50">
+                    <div className="flex gap-4">
+                      {products.find(p => p._id === selectedProduct)?.images[0] && (
+                        <img
+                          src={products.find(p => p._id === selectedProduct)?.images[0]}
+                          alt="Product"
+                          className="w-16 h-16 object-cover rounded-lg"
+                        />
+                      )}
+                      <div className="flex-1">
+                        <h4 className="font-semibold">{products.find(p => p._id === selectedProduct)?.title}</h4>
+                        <p className="text-sm text-slate-600 mt-1">
+                          {products.find(p => p._id === selectedProduct)?.description?.slice(0, 100)}...
+                        </p>
+                        <div className="flex gap-2 mt-2">
+                          <Badge variant="secondary">{products.find(p => p._id === selectedProduct)?.category}</Badge>
+                          {products.find(p => p._id === selectedProduct)?.brand && (
+                            <Badge variant="outline">{products.find(p => p._id === selectedProduct)?.brand}</Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Ads Generator Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5" />
+                  AI Ads Generator
+                </CardTitle>
+                <CardDescription>Generate professional ads using Fal.ai with real image generation ✨</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-sm font-medium">Ad Type</label>
+                    <Select value={selectedAdType} onValueChange={setSelectedAdType}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="image-generation">
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="w-4 h-4" />
+                            1Click Image Ads (AI Generated) ✨
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="video-generation">
+                          <div className="flex items-center gap-2">
+                            <Video className="w-4 h-4" />
+                            Video Ads (Fal.ai + Veo 3) 🎬
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="image-description">
+                          <div className="flex items-center gap-2">
+                            <ImageIcon className="w-4 h-4" />
+                            Image Ad Description
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="video-script">
+                          <div className="flex items-center gap-2">
+                            <Video className="w-4 h-4" />
+                            Video Ad Script
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="social-media">
+                          <div className="flex items-center gap-2">
+                            <Grid className="w-4 h-4" />
+                            Social Media Ads
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="banner-ad">
+                          <div className="flex items-center gap-2">
+                            <Camera className="w-4 h-4" />
+                            Banner Ads
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">Target Audience</label>
+                    <Input
+                      placeholder="e.g., Tech-savvy millennials, Business owners"
+                      value={targetAudience}
+                      onChange={(e) => setTargetAudience(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-sm font-medium">Ad Style</label>
+                      <Select value={adStyle} onValueChange={setAdStyle}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="modern">Modern & Sleek</SelectItem>
+                          <SelectItem value="playful">Playful & Fun</SelectItem>
+                          <SelectItem value="professional">Professional</SelectItem>
+                          <SelectItem value="minimalist">Minimalist</SelectItem>
+                          <SelectItem value="bold">Bold & Dramatic</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Platform</label>
+                      <Select value={platform} onValueChange={setPlatform}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="instagram">Instagram</SelectItem>
+                          <SelectItem value="facebook">Facebook</SelectItem>
+                          <SelectItem value="google">Google Ads</SelectItem>
+                          <SelectItem value="linkedin">LinkedIn</SelectItem>
+                          <SelectItem value="tiktok">TikTok</SelectItem>
+                          <SelectItem value="youtube">YouTube</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">Custom Instructions (Optional)</label>
+                    <Textarea
+                      placeholder="Any specific requirements or creative direction..."
+                      value={customPrompt}
+                      onChange={(e) => setCustomPrompt(e.target.value)}
+                      rows={3}
+                    />
+                  </div>
+
+                  <Button
+                    className="w-full"
+                    onClick={generateAdvancedAd}
+                    disabled={isGenerating || !selectedProduct}
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Sparkles className="w-4 h-4 mr-2 animate-spin" />
+                        Generating Real Images with Fal.ai...
+                      </>
+                    ) : (
+                      <>
+                        <Wand2 className="w-4 h-4 mr-2" />
+                        Generate Professional Ad {selectedAdType === 'image-generation' ? '🎨' : ''}
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Products Gallery */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Your Products</CardTitle>
+                <CardDescription>Manage your product catalog for ads generation</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {products.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {products.map((product) => (
+                      <div
+                        key={product._id}
+                        className={`group relative border rounded-lg p-4 cursor-pointer transition-all ${
+                          selectedProduct === product._id
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                        onClick={() => setSelectedProduct(product._id)}
+                      >
+                        <div className="flex gap-3">
+                          {product.images[0] && (
+                            <img
+                              src={product.images[0]}
+                              alt={product.title}
+                              className="w-16 h-16 object-cover rounded-lg"
+                            />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold truncate">{product.title}</h4>
+                            <p className="text-sm text-slate-600 line-clamp-2">
+                              {product.description}
+                            </p>
+                            <div className="flex gap-2 mt-2">
+                              <Badge variant="secondary" className="text-xs">{product.category}</Badge>
+                              {product.brand && (
+                                <Badge variant="outline" className="text-xs">{product.brand}</Badge>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {selectedProduct === product._id && (
+                          <div className="absolute -top-2 -right-2">
+                            <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                              <span className="text-white text-xs">✓</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Globe className="w-16 h-16 mx-auto mb-4 text-slate-300" />
+                    <p className="text-slate-500">No products yet</p>
+                    <p className="text-sm text-slate-400 mt-1">Add your first product using an Amazon URL</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Generated Ads Display - Below Products */}
+            {generatedAds.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Sparkles className="w-5 h-5" />
+                    Generated Advertisement Creatives
+                  </CardTitle>
+                  <CardDescription>AI-powered professional advertisements ready for use</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {generatedAds.map((ad, index) => (
+                      <div key={index} className="border rounded-lg overflow-hidden">
+                        {/* Enhanced display for video ads */}
+                        {ad.type === 'video-ad' ? (
+                          <div className="space-y-0">
+                            {/* Video Display */}
+                            {ad.metadata?.videoUrl && (
+                              <div className="aspect-video bg-gradient-to-br from-slate-100 to-slate-200 relative">
+                                {ad.metadata.videoUrl.startsWith('http') ? (
+                                  <video
+                                    src={ad.metadata.videoUrl}
+                                    controls
+                                    className="w-full h-full object-cover rounded-t-lg"
+                                    poster={ad.metadata.staticImage}
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex flex-col items-center justify-center text-slate-500">
+                                    <Video className="w-16 h-16 mb-3 text-purple-400 animate-pulse" />
+                                    <h3 className="text-lg font-semibold text-slate-700">{ad.metadata.concept} Video</h3>
+                                    <p className="text-sm text-center max-w-[250px]">AI-Generated Video Advertisement</p>
+                                    <div className="mt-3 flex gap-2">
+                                      <Badge variant="outline" className="text-xs">{ad.metadata.platform}</Badge>
+                                      <Badge variant="outline" className="text-xs">{ad.metadata.animationType}</Badge>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Video overlay info */}
+                                <div className="absolute top-3 left-3">
+                                  <Badge className="bg-purple-600/90 text-white text-xs">
+                                    🎬 {ad.metadata.concept}
+                                  </Badge>
                                 </div>
-                                <div>
-                                  <p className="font-medium">{file.name}</p>
-                                  <p className="text-sm text-muted-foreground">
-                                    {file.app} • {file.modified}
+                                <div className="absolute top-3 right-3">
+                                  <Badge className="bg-black/70 text-white text-xs">
+                                    Veo 3 Video
+                                  </Badge>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Video Ad Details */}
+                            <div className="p-4 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <h4 className="font-semibold text-lg flex items-center gap-2">
+                                  <Video className="w-5 h-5 text-purple-600" />
+                                  {ad.metadata?.concept} Video Ad
+                                </h4>
+                                <div className="flex gap-1">
+                                  <Button size="sm" variant="outline">
+                                    <Download className="w-4 h-4 mr-1" />
+                                    Download
+                                  </Button>
+                                  <Button size="sm" variant="outline">
+                                    <Share2 className="w-4 h-4 mr-1" />
+                                    Share
+                                  </Button>
+                                </div>
+                              </div>
+
+                              <div className="flex flex-wrap gap-2">
+                                <Badge variant="outline">{ad.metadata?.platform}</Badge>
+                                <Badge variant="outline">{ad.metadata?.animationType}</Badge>
+                                <Badge className="bg-purple-100 text-purple-800">Video Generation</Badge>
+                                <Badge variant="secondary">8s • 720p</Badge>
+                              </div>
+
+                              {/* Animation Prompt Preview */}
+                              <div>
+                                <h5 className="text-sm font-medium text-slate-700 mb-2">Animation Description</h5>
+                                <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-3 rounded border max-h-32 overflow-y-auto">
+                                  <p className="text-xs text-slate-700">
+                                    {ad.metadata?.animationPrompt?.substring(0, 200) + '...' || 'Video animation generated with Veo 3'}
                                   </p>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-2">
-                                {file.shared && (
-                                  <Badge variant="outline" className="rounded-xl">
-                                    <Users className="mr-1 h-3 w-3" />
-                                    {file.collaborators}
+                            </div>
+                          </div>
+                        ) : ad.type === '1click-image-ad' ? (
+                          <div className="space-y-0">
+                            {/* Image Display */}
+                            {ad.metadata?.imageBase64 && (
+                              <div className="aspect-square bg-gradient-to-br from-slate-100 to-slate-200 relative">
+                                {ad.metadata.imageBase64.startsWith('data:image') ? (
+                                  <img
+                                    src={ad.metadata.imageBase64}
+                                    alt={`${ad.metadata.concept} Advertisement`}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      console.log('Image load error for:', ad.metadata.concept)
+                                      e.currentTarget.style.display = 'none'
+                                      e.currentTarget.nextElementSibling.style.display = 'flex'
+                                    }}
+                                  />
+                                ) : null}
+                                {/* Fallback display */}
+                                <div className="w-full h-full flex flex-col items-center justify-center text-slate-500" style={{display: ad.metadata.imageBase64?.startsWith('data:image') ? 'none' : 'flex'}}>
+                                  <Sparkles className="w-12 h-12 mb-3 text-blue-400 animate-pulse" />
+                                  <h3 className="text-lg font-semibold text-slate-700">{ad.metadata.concept}</h3>
+                                  <p className="text-sm text-center max-w-[200px]">AI-Generated Advertisement</p>
+                                  <div className="mt-3 flex gap-2">
+                                    <Badge variant="outline" className="text-xs">{ad.metadata.platform}</Badge>
+                                    <Badge variant="outline" className="text-xs">{ad.metadata.style}</Badge>
+                                  </div>
+                                </div>
+
+                                {/* Overlay info */}
+                                <div className="absolute top-3 left-3">
+                                  <Badge className="bg-black/70 text-white text-xs">
+                                    {ad.metadata.concept}
                                   </Badge>
-                                )}
-                                <Button variant="ghost" size="sm" className="rounded-xl">
-                                  Open
-                                </Button>
-                              </div>
-                            </motion.div>
-                          ))}
-                        </div>
-                      </div>
-                    </section>
-
-                    <section className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <h2 className="text-2xl font-semibold">Active Projects</h2>
-                        <Button variant="ghost" className="rounded-2xl">
-                          View All
-                        </Button>
-                      </div>
-                      <div className="rounded-3xl border">
-                        <div className="grid grid-cols-1 divide-y">
-                          {projects.slice(0, 3).map((project) => (
-                            <motion.div
-                              key={project.name}
-                              whileHover={{ backgroundColor: "rgba(0,0,0,0.02)" }}
-                              className="p-4"
-                            >
-                              <div className="flex items-center justify-between mb-2">
-                                <h3 className="font-medium">{project.name}</h3>
-                                <Badge variant="outline" className="rounded-xl">
-                                  Due {project.dueDate}
-                                </Badge>
-                              </div>
-                              <p className="text-sm text-muted-foreground mb-3">{project.description}</p>
-                              <div className="space-y-2">
-                                <div className="flex items-center justify-between text-sm">
-                                  <span>Progress</span>
-                                  <span>{project.progress}%</span>
                                 </div>
-                                <Progress value={project.progress} className="h-2 rounded-xl" />
-                              </div>
-                              <div className="flex items-center justify-between mt-3 text-sm text-muted-foreground">
-                                <div className="flex items-center">
-                                  <Users className="mr-1 h-4 w-4" />
-                                  {project.members} members
-                                </div>
-                                <div className="flex items-center">
-                                  <FileText className="mr-1 h-4 w-4" />
-                                  {project.files} files
+                                <div className="absolute top-3 right-3">
+                                  <Badge variant="secondary" className="text-xs">
+                                    AI Generated
+                                  </Badge>
                                 </div>
                               </div>
-                            </motion.div>
-                          ))}
-                        </div>
-                      </div>
-                    </section>
-                  </div>
+                            )}
 
-                  <section className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h2 className="text-2xl font-semibold">Community Highlights</h2>
-                      <Button variant="ghost" className="rounded-2xl">
-                        Explore
-                      </Button>
-                    </div>
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                      {communityPosts.map((post) => (
-                        <motion.div key={post.title} whileHover={{ scale: 1.02, y: -5 }} whileTap={{ scale: 0.98 }}>
-                          <Card className="overflow-hidden rounded-3xl">
-                            <div className="aspect-[4/3] overflow-hidden bg-muted">
-                              <img
-                                src={post.image || "/placeholder.svg"}
-                                alt={post.title}
-                                className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
-                              />
-                            </div>
-                            <CardContent className="p-4">
-                              <h3 className="font-semibold">{post.title}</h3>
-                              <p className="text-sm text-muted-foreground">by {post.author}</p>
-                              <div className="mt-2 flex items-center justify-between text-sm">
-                                <div className="flex items-center gap-2">
-                                  <Heart className="h-4 w-4 text-red-500" />
-                                  {post.likes}
-                                  <MessageSquare className="ml-2 h-4 w-4 text-blue-500" />
-                                  {post.comments}
-                                </div>
-                                <span className="text-muted-foreground">{post.time}</span>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </section>
-                </TabsContent>
-
-                <TabsContent value="apps" className="space-y-8 mt-0">
-                  <section>
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5 }}
-                      className="overflow-hidden rounded-3xl bg-gradient-to-r from-pink-600 via-red-600 to-orange-600 p-8 text-white"
-                    >
-                      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                        <div className="space-y-2">
-                          <h2 className="text-3xl font-bold">Creative Apps Collection</h2>
-                          <p className="max-w-[600px] text-white/80">
-                            Discover our full suite of professional design and creative applications.
-                          </p>
-                        </div>
-                        <Button className="w-fit rounded-2xl bg-white text-red-700 hover:bg-white/90">
-                          <Download className="mr-2 h-4 w-4" />
-                          Install Desktop App
-                        </Button>
-                      </div>
-                    </motion.div>
-                  </section>
-
-                  <div className="flex flex-wrap gap-3 mb-6">
-                    <Button variant="outline" className="rounded-2xl">
-                      All Categories
-                    </Button>
-                    <Button variant="outline" className="rounded-2xl">
-                      Creative
-                    </Button>
-                    <Button variant="outline" className="rounded-2xl">
-                      Video
-                    </Button>
-                    <Button variant="outline" className="rounded-2xl">
-                      Web
-                    </Button>
-                    <Button variant="outline" className="rounded-2xl">
-                      3D
-                    </Button>
-                    <div className="flex-1"></div>
-                    <div className="relative w-full md:w-auto mt-3 md:mt-0">
-                      <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        type="search"
-                        placeholder="Search apps..."
-                        className="w-full rounded-2xl pl-9 md:w-[200px]"
-                      />
-                    </div>
-                  </div>
-
-                  <section className="space-y-4">
-                    <h2 className="text-2xl font-semibold">New Releases</h2>
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                      {apps
-                        .filter((app) => app.new)
-                        .map((app) => (
-                          <motion.div key={app.name} whileHover={{ scale: 1.02, y: -5 }} whileTap={{ scale: 0.98 }}>
-                            <Card className="overflow-hidden rounded-3xl border-2 hover:border-primary/50 transition-all duration-300">
-                              <CardHeader className="pb-2">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted">
-                                    {app.icon}
-                                  </div>
-                                  <Badge className="rounded-xl bg-amber-500">New</Badge>
-                                </div>
-                              </CardHeader>
-                              <CardContent className="pb-2">
-                                <CardTitle className="text-lg">{app.name}</CardTitle>
-                                <CardDescription>{app.description}</CardDescription>
-                                <div className="mt-2">
-                                  <div className="flex items-center justify-between text-sm">
-                                    <span>Installation</span>
-                                    <span>{app.progress}%</span>
-                                  </div>
-                                  <Progress value={app.progress} className="h-2 mt-1 rounded-xl" />
-                                </div>
-                              </CardContent>
-                              <CardFooter>
-                                <Button variant="secondary" className="w-full rounded-2xl">
-                                  {app.progress < 100 ? "Continue Install" : "Open"}
-                                </Button>
-                              </CardFooter>
-                            </Card>
-                          </motion.div>
-                        ))}
-                    </div>
-                  </section>
-
-                  <section className="space-y-4">
-                    <h2 className="text-2xl font-semibold">All Apps</h2>
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                      {apps.map((app) => (
-                        <motion.div key={app.name} whileHover={{ scale: 1.02, y: -5 }} whileTap={{ scale: 0.98 }}>
-                          <Card className="overflow-hidden rounded-3xl border hover:border-primary/50 transition-all duration-300">
-                            <CardHeader className="pb-2">
+                            {/* Ad Details */}
+                            <div className="p-4 space-y-3">
                               <div className="flex items-center justify-between">
-                                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted">
-                                  {app.icon}
+                                <h4 className="font-semibold text-lg">{ad.metadata?.concept} Advertisement</h4>
+                                <div className="flex gap-1">
+                                  <Button size="sm" variant="outline">
+                                    <Download className="w-4 h-4 mr-1" />
+                                    Export
+                                  </Button>
+                                  <Button size="sm" variant="outline">
+                                    <Share2 className="w-4 h-4 mr-1" />
+                                    Share
+                                  </Button>
                                 </div>
-                                <Badge variant="outline" className="rounded-xl">
-                                  {app.category}
+                              </div>
+
+                              <div className="flex flex-wrap gap-2">
+                                <Badge variant="outline">{ad.metadata?.platform}</Badge>
+                                <Badge variant="outline">{ad.metadata?.style}</Badge>
+                                <Badge variant="secondary">
+                                  {ad.metadata?.generatedAt ? new Date(ad.metadata.generatedAt).toLocaleTimeString() : 'Just now'}
                                 </Badge>
                               </div>
-                            </CardHeader>
-                            <CardContent className="pb-2">
-                              <CardTitle className="text-lg">{app.name}</CardTitle>
-                              <CardDescription>{app.description}</CardDescription>
-                            </CardContent>
-                            <CardFooter className="flex gap-2">
-                              <Button variant="secondary" className="flex-1 rounded-2xl">
-                                {app.progress < 100 ? "Install" : "Open"}
-                              </Button>
-                              <Button variant="outline" size="icon" className="rounded-2xl">
-                                <Star className="h-4 w-4" />
-                              </Button>
-                            </CardFooter>
-                          </Card>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </section>
-                </TabsContent>
 
-                <TabsContent value="files" className="space-y-8 mt-0">
-                  <section>
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5 }}
-                      className="overflow-hidden rounded-3xl bg-gradient-to-r from-teal-600 via-cyan-600 to-blue-600 p-8 text-white"
-                    >
-                      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                        <div className="space-y-2">
-                          <h2 className="text-3xl font-bold">Your Creative Files</h2>
-                          <p className="max-w-[600px] text-white/80">
-                            Access, manage, and share all your design files in one place.
-                          </p>
-                        </div>
-                        <div className="flex flex-wrap gap-3">
-                          <Button className="rounded-2xl bg-white/20 backdrop-blur-md hover:bg-white/30">
-                            <Cloud className="mr-2 h-4 w-4" />
-                            Cloud Storage
-                          </Button>
-                          <Button className="rounded-2xl bg-white text-blue-700 hover:bg-white/90">
-                            <Plus className="mr-2 h-4 w-4" />
-                            Upload Files
-                          </Button>
-                        </div>
-                      </div>
-                    </motion.div>
-                  </section>
-
-                  <div className="flex flex-wrap gap-3 mb-6">
-                    <Button variant="outline" className="rounded-2xl">
-                      <FileText className="mr-2 h-4 w-4" />
-                      All Files
-                    </Button>
-                    <Button variant="outline" className="rounded-2xl">
-                      <Clock className="mr-2 h-4 w-4" />
-                      Recent
-                    </Button>
-                    <Button variant="outline" className="rounded-2xl">
-                      <Users className="mr-2 h-4 w-4" />
-                      Shared
-                    </Button>
-                    <Button variant="outline" className="rounded-2xl">
-                      <Star className="mr-2 h-4 w-4" />
-                      Favorites
-                    </Button>
-                    <Button variant="outline" className="rounded-2xl">
-                      <Trash className="mr-2 h-4 w-4" />
-                      Trash
-                    </Button>
-                    <div className="flex-1"></div>
-                    <div className="relative w-full md:w-auto mt-3 md:mt-0">
-                      <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        type="search"
-                        placeholder="Search files..."
-                        className="w-full rounded-2xl pl-9 md:w-[200px]"
-                      />
-                    </div>
-                  </div>
-
-                  <section className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h2 className="text-2xl font-semibold">All Files</h2>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="rounded-2xl">
-                          <PanelLeft className="mr-2 h-4 w-4" />
-                          Filter
-                        </Button>
-                        <Button variant="outline" size="sm" className="rounded-2xl">
-                          <ArrowUpDown className="mr-2 h-4 w-4" />
-                          Sort
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="rounded-3xl border overflow-hidden">
-                      <div className="bg-muted/50 p-3 hidden md:grid md:grid-cols-12 text-sm font-medium">
-                        <div className="col-span-6">Name</div>
-                        <div className="col-span-2">App</div>
-                        <div className="col-span-2">Size</div>
-                        <div className="col-span-2">Modified</div>
-                      </div>
-                      <div className="divide-y">
-                        {recentFiles.map((file) => (
-                          <motion.div
-                            key={file.name}
-                            whileHover={{ backgroundColor: "rgba(0,0,0,0.02)" }}
-                            className="p-3 md:grid md:grid-cols-12 items-center flex flex-col md:flex-row gap-3 md:gap-0"
-                          >
-                            <div className="col-span-6 flex items-center gap-3 w-full md:w-auto">
-                              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-muted">
-                                {file.icon}
-                              </div>
+                              {/* Prompt Preview */}
                               <div>
-                                <p className="font-medium">{file.name}</p>
-                                {file.shared && (
-                                  <div className="flex items-center text-xs text-muted-foreground">
-                                    <Users className="mr-1 h-3 w-3" />
-                                    Shared with {file.collaborators} people
-                                  </div>
-                                )}
+                                <h5 className="text-sm font-medium text-slate-700 mb-2">Ad Specification</h5>
+                                <div className="bg-slate-50 p-3 rounded border max-h-32 overflow-y-auto">
+                                  <pre className="whitespace-pre-wrap text-xs text-slate-600">
+                                    {ad.metadata?.prompt ?
+                                      JSON.stringify(JSON.parse(ad.metadata.prompt), null, 2).substring(0, 300) + '...'
+                                      : ad.content.substring(0, 300) + '...'}
+                                  </pre>
+                                </div>
                               </div>
                             </div>
-                            <div className="col-span-2 text-sm md:text-base">{file.app}</div>
-                            <div className="col-span-2 text-sm md:text-base">{file.size}</div>
-                            <div className="col-span-2 flex items-center justify-between w-full md:w-auto">
-                              <span className="text-sm md:text-base">{file.modified}</span>
-                              <div className="flex gap-1">
-                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl">
-                                  <Share2 className="h-4 w-4" />
-                                </Button>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          </motion.div>
-                        ))}
-                      </div>
-                    </div>
-                  </section>
-                </TabsContent>
-
-                <TabsContent value="projects" className="space-y-8 mt-0">
-                  <section>
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5 }}
-                      className="overflow-hidden rounded-3xl bg-gradient-to-r from-purple-600 via-violet-600 to-indigo-600 p-8 text-white"
-                    >
-                      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                        <div className="space-y-2">
-                          <h2 className="text-3xl font-bold">Project Management</h2>
-                          <p className="max-w-[600px] text-white/80">
-                            Organize your creative work into projects and collaborate with your team.
-                          </p>
-                        </div>
-                        <Button className="w-fit rounded-2xl bg-white text-indigo-700 hover:bg-white/90">
-                          <Plus className="mr-2 h-4 w-4" />
-                          New Project
-                        </Button>
-                      </div>
-                    </motion.div>
-                  </section>
-
-                  <div className="flex flex-wrap gap-3 mb-6">
-                    <Button variant="outline" className="rounded-2xl">
-                      <Layers className="mr-2 h-4 w-4" />
-                      All Projects
-                    </Button>
-                    <Button variant="outline" className="rounded-2xl">
-                      <Clock className="mr-2 h-4 w-4" />
-                      Recent
-                    </Button>
-                    <Button variant="outline" className="rounded-2xl">
-                      <Users className="mr-2 h-4 w-4" />
-                      Shared
-                    </Button>
-                    <Button variant="outline" className="rounded-2xl">
-                      <Archive className="mr-2 h-4 w-4" />
-                      Archived
-                    </Button>
-                    <div className="flex-1"></div>
-                    <div className="relative w-full md:w-auto mt-3 md:mt-0">
-                      <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        type="search"
-                        placeholder="Search projects..."
-                        className="w-full rounded-2xl pl-9 md:w-[200px]"
-                      />
-                    </div>
-                  </div>
-
-                  <section className="space-y-4">
-                    <h2 className="text-2xl font-semibold">Active Projects</h2>
-                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-                      {projects.map((project) => (
-                        <motion.div key={project.name} whileHover={{ scale: 1.02, y: -5 }} whileTap={{ scale: 0.98 }}>
-                          <Card className="overflow-hidden rounded-3xl border hover:border-primary/50 transition-all duration-300">
-                            <CardHeader>
-                              <div className="flex items-center justify-between">
-                                <CardTitle>{project.name}</CardTitle>
-                                <Badge variant="outline" className="rounded-xl">
-                                  Due {project.dueDate}
-                                </Badge>
-                              </div>
-                              <CardDescription>{project.description}</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                              <div className="space-y-2">
-                                <div className="flex items-center justify-between text-sm">
-                                  <span>Progress</span>
-                                  <span>{project.progress}%</span>
-                                </div>
-                                <Progress value={project.progress} className="h-2 rounded-xl" />
-                              </div>
-                              <div className="flex items-center justify-between text-sm text-muted-foreground">
-                                <div className="flex items-center">
-                                  <Users className="mr-1 h-4 w-4" />
-                                  {project.members} members
-                                </div>
-                                <div className="flex items-center">
-                                  <FileText className="mr-1 h-4 w-4" />
-                                  {project.files} files
-                                </div>
-                              </div>
-                            </CardContent>
-                            <CardFooter className="flex gap-2">
-                              <Button variant="secondary" className="flex-1 rounded-2xl">
-                                Open Project
-                              </Button>
-                              <Button variant="outline" size="icon" className="rounded-2xl">
-                                <Share2 className="h-4 w-4" />
-                              </Button>
-                            </CardFooter>
-                          </Card>
-                        </motion.div>
-                      ))}
-                      <motion.div whileHover={{ scale: 1.02, y: -5 }} whileTap={{ scale: 0.98 }}>
-                        <Card className="flex h-full flex-col items-center justify-center rounded-3xl border border-dashed p-8 hover:border-primary/50 transition-all duration-300">
-                          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                            <Plus className="h-6 w-6" />
                           </div>
-                          <h3 className="text-lg font-medium">Create New Project</h3>
-                          <p className="mb-4 text-center text-sm text-muted-foreground">
-                            Start a new creative project from scratch or use a template
-                          </p>
-                          <Button className="rounded-2xl">New Project</Button>
-                        </Card>
-                      </motion.div>
-                    </div>
-                  </section>
-
-                  <section className="space-y-4">
-                    <h2 className="text-2xl font-semibold">Project Templates</h2>
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                      <Card className="overflow-hidden rounded-3xl">
-                        <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 p-6 text-white">
-                          <h3 className="text-lg font-medium">Brand Identity</h3>
-                          <p className="text-sm text-white/80">Complete brand design package</p>
-                        </div>
-                        <CardFooter className="flex justify-between p-4">
-                          <Badge variant="outline" className="rounded-xl">
-                            Popular
-                          </Badge>
-                          <Button variant="ghost" size="sm" className="rounded-xl">
-                            Use Template
-                          </Button>
-                        </CardFooter>
-                      </Card>
-                      <Card className="overflow-hidden rounded-3xl">
-                        <div className="aspect-video bg-gradient-to-br from-amber-500 to-red-600 p-6 text-white">
-                          <h3 className="text-lg font-medium">Marketing Campaign</h3>
-                          <p className="text-sm text-white/80">Multi-channel marketing assets</p>
-                        </div>
-                        <CardFooter className="flex justify-between p-4">
-                          <Badge variant="outline" className="rounded-xl">
-                            New
-                          </Badge>
-                          <Button variant="ghost" size="sm" className="rounded-xl">
-                            Use Template
-                          </Button>
-                        </CardFooter>
-                      </Card>
-                      <Card className="overflow-hidden rounded-3xl">
-                        <div className="aspect-video bg-gradient-to-br from-green-500 to-teal-600 p-6 text-white">
-                          <h3 className="text-lg font-medium">Website Redesign</h3>
-                          <p className="text-sm text-white/80">Complete website design workflow</p>
-                        </div>
-                        <CardFooter className="flex justify-between p-4">
-                          <Badge variant="outline" className="rounded-xl">
-                            Featured
-                          </Badge>
-                          <Button variant="ghost" size="sm" className="rounded-xl">
-                            Use Template
-                          </Button>
-                        </CardFooter>
-                      </Card>
-                      <Card className="overflow-hidden rounded-3xl">
-                        <div className="aspect-video bg-gradient-to-br from-pink-500 to-rose-600 p-6 text-white">
-                          <h3 className="text-lg font-medium">Product Launch</h3>
-                          <p className="text-sm text-white/80">Product launch campaign assets</p>
-                        </div>
-                        <CardFooter className="flex justify-between p-4">
-                          <Badge variant="outline" className="rounded-xl">
-                            Popular
-                          </Badge>
-                          <Button variant="ghost" size="sm" className="rounded-xl">
-                            Use Template
-                          </Button>
-                        </CardFooter>
-                      </Card>
-                    </div>
-                  </section>
-                </TabsContent>
-
-                <TabsContent value="learn" className="space-y-8 mt-0">
-                  <section>
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5 }}
-                      className="overflow-hidden rounded-3xl bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 p-8 text-white"
-                    >
-                      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                        <div className="space-y-2">
-                          <h2 className="text-3xl font-bold">Learn & Grow</h2>
-                          <p className="max-w-[600px] text-white/80">
-                            Expand your creative skills with tutorials, courses, and resources.
-                          </p>
-                        </div>
-                        <Button className="w-fit rounded-2xl bg-white text-emerald-700 hover:bg-white/90">
-                          <Crown className="mr-2 h-4 w-4" />
-                          Upgrade to Pro
-                        </Button>
-                      </div>
-                    </motion.div>
-                  </section>
-
-                  <div className="flex flex-wrap gap-3 mb-6">
-                    <Button variant="outline" className="rounded-2xl">
-                      <Play className="mr-2 h-4 w-4" />
-                      All Tutorials
-                    </Button>
-                    <Button variant="outline" className="rounded-2xl">
-                      <BookOpen className="mr-2 h-4 w-4" />
-                      Courses
-                    </Button>
-                    <Button variant="outline" className="rounded-2xl">
-                      <Lightbulb className="mr-2 h-4 w-4" />
-                      Tips & Tricks
-                    </Button>
-                    <Button variant="outline" className="rounded-2xl">
-                      <TrendingUp className="mr-2 h-4 w-4" />
-                      Trending
-                    </Button>
-                    <Button variant="outline" className="rounded-2xl">
-                      <Bookmark className="mr-2 h-4 w-4" />
-                      Saved
-                    </Button>
-                    <div className="flex-1"></div>
-                    <div className="relative w-full md:w-auto mt-3 md:mt-0">
-                      <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        type="search"
-                        placeholder="Search tutorials..."
-                        className="w-full rounded-2xl pl-9 md:w-[200px]"
-                      />
-                    </div>
-                  </div>
-
-                  <section className="space-y-4">
-                    <h2 className="text-2xl font-semibold">Featured Tutorials</h2>
-                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                      {tutorials.slice(0, 3).map((tutorial) => (
-                        <motion.div key={tutorial.title} whileHover={{ scale: 1.02, y: -5 }} whileTap={{ scale: 0.98 }}>
-                          <Card className="overflow-hidden rounded-3xl">
-                            <div className="aspect-video overflow-hidden bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 relative">
-                              <div className="absolute inset-0 flex items-center justify-center">
-                                <Button size="icon" variant="secondary" className="h-14 w-14 rounded-full">
-                                  <Play className="h-6 w-6" />
-                                </Button>
-                              </div>
-                              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4 text-white">
-                                <Badge className="bg-white/20 text-white hover:bg-white/30 rounded-xl">
-                                  {tutorial.category}
-                                </Badge>
-                                <h3 className="mt-2 text-lg font-medium">{tutorial.title}</h3>
-                              </div>
-                            </div>
-                            <CardContent className="p-4">
-                              <p className="text-sm text-muted-foreground">{tutorial.description}</p>
-                              <div className="mt-4 flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <Avatar className="h-6 w-6">
-                                    <AvatarFallback>{tutorial.instructor.charAt(0)}</AvatarFallback>
-                                  </Avatar>
-                                  <span className="text-sm">{tutorial.instructor}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                  <Clock className="h-4 w-4" />
-                                  {tutorial.duration}
-                                </div>
-                              </div>
-                            </CardContent>
-                            <CardFooter className="flex items-center justify-between border-t p-4">
-                              <Badge variant="outline" className="rounded-xl">
-                                {tutorial.level}
+                        ) : (
+                          /* Regular ad display */
+                          <div className="p-4 space-y-3">
+                            <div className="flex items-center justify-between mb-3">
+                              <Badge variant="default" className="text-xs">
+                                {ad.type.replace('-', ' ').toUpperCase()}
                               </Badge>
-                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                <Eye className="h-4 w-4" />
-                                {tutorial.views} views
-                              </div>
-                            </CardFooter>
-                          </Card>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </section>
-
-                  <section className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h2 className="text-2xl font-semibold">Popular Courses</h2>
-                      <Button variant="ghost" className="rounded-2xl">
-                        View All
-                      </Button>
-                    </div>
-                    <div className="rounded-3xl border overflow-hidden">
-                      <div className="divide-y">
-                        {tutorials.slice(3, 5).map((tutorial) => (
-                          <motion.div
-                            key={tutorial.title}
-                            whileHover={{ scale: 1.02, y: -5 }}
-                            whileTap={{ scale: 0.98 }}
-                            className="p-4 flex flex-col md:flex-row gap-3"
-                          >
-                            <div className="flex-shrink-0">
-                              <div className="relative h-20 w-20 overflow-hidden rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-600">
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                  <Play className="h-8 w-8 text-white" />
-                                </div>
+                              <div className="flex gap-2">
+                                <Button size="sm" variant="outline">
+                                  <Download className="w-4 h-4 mr-2" />
+                                  Export
+                                </Button>
+                                <Button size="sm" variant="outline">
+                                  <Share2 className="w-4 h-4 mr-2" />
+                                  Share
+                                </Button>
                               </div>
                             </div>
-                            <div className="flex-1">
-                              <h3 className="font-medium">{tutorial.title}</h3>
-                              <p className="text-sm text-muted-foreground">{tutorial.description}</p>
-                              <div className="mt-2 flex flex-wrap items-center gap-3">
-                                <Badge variant="outline" className="rounded-xl">
-                                  {tutorial.level}
-                                </Badge>
-                                <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                  <Clock className="h-3 w-3" />
-                                  {tutorial.duration}
-                                </div>
-                                <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                  <Eye className="h-3 w-3" />
-                                  {tutorial.views} views
-                                </div>
-                              </div>
+                            <div className="prose prose-sm max-w-none">
+                              <pre className="whitespace-pre-wrap text-sm bg-slate-50 p-3 rounded max-h-64 overflow-y-auto">
+                                {ad.content}
+                              </pre>
                             </div>
-                            <div className="flex items-center">
-                              <Button variant="ghost" size="sm" className="rounded-xl">
-                                Watch Now
-                              </Button>
-                            </div>
-                          </motion.div>
-                        ))}
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  </section>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+        </Tabs>
 
-                  <section className="space-y-4">
-                    <h2 className="text-2xl font-semibold">Learning Paths</h2>
-                    <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                      <Card className="overflow-hidden rounded-3xl border-2 hover:border-primary/50 transition-all duration-300">
-                        <CardHeader className="pb-2">
-                          <div className="flex items-center justify-between">
-                            <Badge className="rounded-xl bg-blue-500">Beginner</Badge>
-                            <Award className="h-5 w-5 text-amber-500" />
-                          </div>
-                          <CardTitle className="mt-2">UI/UX Design Fundamentals</CardTitle>
-                          <CardDescription>Master the basics of user interface and experience design</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between text-sm">
-                              <span>8 courses • 24 hours</span>
-                              <span>4.8 ★</span>
-                            </div>
-                            <Progress value={30} className="h-2 rounded-xl" />
-                            <p className="text-xs text-muted-foreground">30% completed</p>
-                          </div>
-                        </CardContent>
-                        <CardFooter>
-                          <Button variant="secondary" className="w-full rounded-2xl">
-                            Continue Learning
-                          </Button>
-                        </CardFooter>
-                      </Card>
+        {/* Product Preview Modal - 1Click Workflow */}
+        <ProductPreviewModal
+          isOpen={showProductModal}
+          onClose={handleCloseModal}
+          productData={previewProductData}
+          isLoading={isPreviewLoading}
+          onSave={handleSaveProduct}
+          isSaving={isSavingProduct}
+        />
 
-                      <Card className="overflow-hidden rounded-3xl border-2 hover:border-primary/50 transition-all duration-300">
-                        <CardHeader className="pb-2">
-                          <div className="flex items-center justify-between">
-                            <Badge className="rounded-xl bg-amber-500">Intermediate</Badge>
-                            <Award className="h-5 w-5 text-amber-500" />
-                          </div>
-                          <CardTitle className="mt-2">Digital Illustration Mastery</CardTitle>
-                          <CardDescription>Create stunning digital artwork and illustrations</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between text-sm">
-                              <span>12 courses • 36 hours</span>
-                              <span>4.9 ★</span>
-                            </div>
-                            <Progress value={0} className="h-2 rounded-xl" />
-                            <p className="text-xs text-muted-foreground">Not started</p>
-                          </div>
-                        </CardContent>
-                        <CardFooter>
-                          <Button variant="secondary" className="w-full rounded-2xl">
-                            Start Learning
-                          </Button>
-                        </CardFooter>
-                      </Card>
-
-                      <Card className="overflow-hidden rounded-3xl border-2 hover:border-primary/50 transition-all duration-300">
-                        <CardHeader className="pb-2">
-                          <div className="flex items-center justify-between">
-                            <Badge className="rounded-xl bg-red-500">Advanced</Badge>
-                            <Award className="h-5 w-5 text-amber-500" />
-                          </div>
-                          <CardTitle className="mt-2">Motion Graphics & Animation</CardTitle>
-                          <CardDescription>Create professional motion graphics and animations</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between text-sm">
-                              <span>10 courses • 30 hours</span>
-                              <span>4.7 ★</span>
-                            </div>
-                            <Progress value={0} className="h-2 rounded-xl" />
-                            <p className="text-xs text-muted-foreground">Not started</p>
-                          </div>
-                        </CardContent>
-                        <CardFooter>
-                          <Button variant="secondary" className="w-full rounded-2xl">
-                            Start Learning
-                          </Button>
-                        </CardFooter>
-                      </Card>
-                    </div>
-                  </section>
-                </TabsContent>
-              </motion.div>
-            </AnimatePresence>
-          </Tabs>
-        </main>
+        {/* Toast Notifications */}
+        <Toaster />
       </div>
     </div>
   )
