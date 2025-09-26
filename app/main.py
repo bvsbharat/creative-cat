@@ -69,16 +69,20 @@ app = FastAPI(
 # Create FastApiMCP instance
 mcp = FastApiMCP(app)
 
+class QueryRequest(BaseModel):
+    query: str
+    fetch_results: bool = True
+
 @app.post("/api/execute_query", tags=["snowflake"])
-async def execute_query(query: str, fetch_results: bool = True) -> Dict[str, Any]:
+async def execute_query(request: QueryRequest) -> Dict[str, Any]:
     """Execute a SQL query on Snowflake and optionally return results"""
     try:
         conn = get_snowflake_connection()
         cursor = conn.cursor()
         
-        cursor.execute(query)
+        cursor.execute(request.query)
         
-        if fetch_results and cursor.description:
+        if request.fetch_results and cursor.description:
             columns = [desc[0] for desc in cursor.description]
             rows = cursor.fetchall()
             return {
